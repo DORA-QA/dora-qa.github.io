@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DORA QA — Analyse locale du registre d'information DORA</title>
+<meta name="description" content="DORA Register Quality Analyst : outil gratuit et open source (EUPL 1.2) qui contrôle votre registre d'information DORA sur votre poste, sans jamais l'envoyer sur Internet.">
+<meta property="og:title" content="DORA QA — Analyse locale du registre d'information DORA">
+<meta property="og:description" content="Gratuit, open source, 100 % local. Contrôles EBA, constats expliqués en clair et conseils de correction.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dora-qa.github.io/">
+<meta property="og:image" content="https://dora-qa.github.io/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="logo.png">
+<style>
+  :root{
+    --ink:#0f1b2d; --ink-2:#3b4a5e; --muted:#6b7a8f; --line:#dfe4ec;
+    --paper:#f7f8fa; --card:#ffffff; --accent:#1f4fd1; --accent-ink:#ffffff;
+    --ok:#1d7a4f; --warn:#b26a00; --crit:#b42318; --info:#3b6bd6;
+    --radius:14px;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  /* header */
+  header.top{position:sticky;top:0;z-index:10;background:rgba(247,248,250,.88);backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+  .brand img{width:30px;height:30px;border-radius:7px}
+  .brand .mark{width:30px;height:30px;border-radius:7px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800;letter-spacing:.02em}
+  nav.links{display:flex;align-items:center;gap:18px;font-size:14px}
+  nav.links a{color:var(--ink-2);text-decoration:none}
+  nav.links a:hover{color:var(--ink)}
+  .lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .lang button{border:0;background:transparent;padding:5px 11px;font:600 12px var(--font);color:var(--muted);cursor:pointer}
+  .lang button[aria-pressed="true"]{background:var(--ink);color:#fff}
+  @media (max-width:720px){nav.links .hide-sm{display:none}}
+  /* hero */
+  .hero{padding:72px 0 40px}
+  .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  @media (max-width:900px){.hero .grid{grid-template-columns:1fr}}
+  .eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:600;color:var(--ok);background:#e6f4ec;border-radius:999px;padding:5px 12px}
+  .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  h1{font-size:clamp(32px,4.6vw,50px);line-height:1.08;letter-spacing:-.025em;margin:18px 0 16px}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:18px;color:var(--ink-2);max-width:34em;margin:0 0 28px}
+  .cta{display:flex;flex-wrap:wrap;gap:12px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:10px;font-weight:650;font-size:15px;text-decoration:none;border:1px solid transparent}
+  .btn.primary{background:var(--accent);color:var(--accent-ink)}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{border-color:var(--line);color:var(--ink);background:#fff}
+  .btn.ghost:hover{border-color:#c5cdd9}
+  .platforms{margin-top:18px;font-size:13px;color:var(--muted)}
+  /* report mock */
+  .report{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 20px 50px -24px rgba(15,27,45,.35);overflow:hidden;font-size:13px}
+  .report .bar{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfcfd}
+  .report .bar i{width:9px;height:9px;border-radius:50%;background:#d9dee6;display:block}
+  .report .bar span{margin-left:10px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .scores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px 16px 6px}
+  .score{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .score b{display:block;font-size:22px;letter-spacing:-.02em}
+  .score small{color:var(--muted);font-size:11.5px}
+  .finding{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:11px 16px;border-top:1px solid var(--line)}
+  .finding:first-of-type{border-top:0}
+  .sev{font:700 10.5px var(--font);letter-spacing:.04em;padding:3px 7px;border-radius:6px;height:fit-content;white-space:nowrap}
+  .sev.b{background:#fde8e7;color:var(--crit)} .sev.m{background:#fff2dc;color:var(--warn)} .sev.i{background:#e8eefc;color:var(--info)}
+  .finding p{margin:0;color:var(--ink)}
+  .finding code{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .finding .tip{margin-top:4px;color:var(--ink-2);font-size:12.5px}
+  .caption{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}
+  /* sections */
+  section{padding:56px 0}
+  h2{font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin:0 0 10px}
+  .sub{color:var(--ink-2);margin:0 0 30px;max-width:44em}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media (max-width:860px){.cards{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+  .card .ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#eef2fd;color:var(--accent);margin-bottom:12px}
+  .card h3{margin:0 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--ink-2);font-size:15px}
+  .checks{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 28px;padding:0;margin:0;list-style:none}
+  @media (max-width:760px){.checks{grid-template-columns:1fr}}
+  .checks li{padding-left:28px;position:relative}
+  .checks li::before{content:"";position:absolute;left:0;top:5px;width:16px;height:16px;border-radius:5px;background:#e6f4ec;box-shadow:inset 0 0 0 1.5px var(--ok)}
+  .checks li::after{content:"";position:absolute;left:5px;top:8px;width:6px;height:8px;border:solid var(--ok);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .checks b{display:block}
+  .checks span{color:var(--ink-2);font-size:14.5px}
+  table.versions{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;font-size:15px}
+  table.versions th,table.versions td{padding:14px 18px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+  table.versions thead th{border-top:0;background:#fbfcfd;font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  table.versions td:first-child{font-weight:650;white-space:nowrap}
+  .steps{counter-reset:s;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;list-style:none;padding:0;margin:0}
+  @media (max-width:860px){.steps{grid-template-columns:1fr 1fr}}
+  @media (max-width:520px){.steps{grid-template-columns:1fr}}
+  .steps li{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;counter-increment:s}
+  .steps li::before{content:counter(s);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-weight:700;font-size:13px;margin-bottom:10px}
+  .steps b{display:block;margin-bottom:4px}
+  .steps span{color:var(--ink-2);font-size:14.5px}
+  .steps code{font-family:var(--mono);font-size:12.5px;background:#f0f2f6;padding:1px 5px;border-radius:4px;word-break:break-all}
+  .dark{background:var(--ink);color:#e9edf3}
+  .dark h2{color:#fff}
+  .dark .sub{color:#b8c2d1}
+  .dark .cards .card{background:#16253b;border-color:#24364f}
+  .dark .card h3{color:#fff}
+  .dark .card p{color:#b8c2d1}
+  .dark .card .ico{background:#1f3456;color:#9db8ff}
+  .disclaimer{background:#fff8ec;border:1px solid #f1dcb3;border-radius:var(--radius);padding:20px 22px;color:#5a4416;font-size:14.5px}
+  .disclaimer b{color:#3f2f0d}
+  footer{padding:40px 0 56px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+  footer .row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:18px}
+  footer a{color:var(--ink-2)}
+  .fine{margin-top:16px;font-size:12.5px}
+  [data-lang="en"] .fr, [data-lang="fr"] .en{display:none !important}
+</style>
+</head>
+<body data-lang="fr">
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#">
+      <img src="logo.png" alt="">
+      <span>DORA QA</span>
+    </a>
+    <nav class="links">
+      <a class="hide-sm" href="#controles"><span class="fr">Contrôles</span><span class="en">Checks</span></a>
+      <a class="hide-sm" href="#essayer"><span class="fr">Essayer</span><span class="en">Try it</span></a>
+      <a class="hide-sm" href="https://github.com/DORA-QA/dora-register-quality-analyst">GitHub</a>
+      <div class="lang" role="group" aria-label="Langue / Language">
+        <button type="button" data-set="fr" aria-pressed="true">FR</button>
+        <button type="button" data-set="en" aria-pressed="false">EN</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap grid">
+      <div>
+        <span class="eyebrow"><span class="fr">Gratuit · Open source · 100 % local</span><span class="en">Free · Open source · 100% local</span></span>
+        <h1>
+          <span class="fr">Vérifiez votre registre DORA <em>sans qu'il quitte votre poste</em>.</span>
+          <span class="en">Check your DORA register <em>without it ever leaving your computer</em>.</span>
+        </h1>
+        <p class="lede">
+          <span class="fr">DORA Register Quality Analyst contrôle votre registre d'information avant sa remise à l'autorité compétente, et explique chaque constat en clair avec un conseil pour le corriger.</span>
+          <span class="en">DORA Register Quality Analyst checks your register of information before you submit it to your competent authority, and explains every finding in plain language with advice on how to fix it.</span>
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/DORA-QA/dora-register-quality-analyst/releases/latest">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span class="fr">Télécharger</span><span class="en">Download</span>
+          </a>
+          <a class="btn ghost" href="https://github.com/DORA-QA/dora-register-quality-analyst">
+            <span class="fr">Voir le code source</span><span class="en">View the source code</span>
+          </a>
+        </div>
+        <p class="platforms">Windows · macOS (Apple Silicon &amp; Intel) · Linux — <span class="fr">sans installation</span><span class="en">no installation</span></p>
+      </div>
+
+      <div>
+        <div class="report" role="img" aria-label="Illustration d'un rapport DORA QA">
+          <div class="bar"><i></i><i></i><i></i><span>127.0.0.1 — DORA QA</span></div>
+          <div class="scores">
+            <div class="score"><b>92 %</b><small class="fr">Réglementaire</small><small class="en">Regulatory</small></div>
+            <div class="score"><b>81 %</b><small class="fr">Qualité</small><small class="en">Quality</small></div>
+            <div class="score"><b>88 %</b><small class="fr">Confiance</small><small class="en">Confidence</small></div>
+          </div>
+          <div>
+            <div class="finding">
+              <span class="sev b">BLOCKER</span>
+              <div>
+                <p class="fr">Un modèle déclaré dans le package est absent.</p>
+                <p class="en">A template declared in the package is missing.</p>
+                <code>B_05.02 · EBA reporting package</code>
+                <div class="tip fr">Conseil : ajoutez le fichier CSV du modèle, même vide, ou retirez-le de la liste des modèles déclarés.</div>
+                <div class="tip en">Tip: add the template's CSV file, even empty, or remove it from the declared templates.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <span class="sev m">MAJOR</span>
+              <div>
+                <p class="fr">Valeur hors de la liste fermée de la taxonomie EBA 4.0.</p>
+                <p class="en">Value outside the EBA 4.0 taxonomy closed list.</p>
+                <code>B_02.02.0050 · <span class="fr">ligne</span><span class="en">row</span> 14</code>
+                <div class="tip fr">Conseil : choisissez le code exact de la liste fermée, sans libellé ajouté.</div>
+                <div class="tip en">Tip: use the exact closed-list code, with no label appended.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <span class="sev i">INFO</span>
+              <div>
+                <p class="fr">Le montant total du prestataire est inférieur à la somme de ses accords.</p>
+                <p class="en">The provider's total amount is lower than the sum of its arrangements.</p>
+                <code>B_05.01.0100</code>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="caption"><span class="fr">Illustration — données fictives</span><span class="en">Illustration — fictitious data</span></p>
+      </div>
+    </div>
+  </div>
+
+  <section class="dark">
+    <div class="wrap">
+      <h2><span class="fr">Vos données restent chez vous</span><span class="en">Your data stays with you</span></h2>
+      <p class="sub">
+        <span class="fr">Un registre d'information décrit tous vos prestataires TIC et vos contrats. Il n'a rien à faire sur le serveur d'un tiers.</span>
+        <span class="en">A register of information lists all your ICT providers and contracts. It has no business on a third party's server.</span>
+      </p>
+      <div class="cards">
+        <div class="card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+          <h3><span class="fr">Tout sur votre poste</span><span class="en">Runs on your machine</span></h3>
+          <p><span class="fr">L'interface et le moteur ne répondent que sur 127.0.0.1. Le registre n'est jamais envoyé sur Internet.</span><span class="en">The interface and engine only listen on 127.0.0.1. Your register is never sent over the Internet.</span></p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
+          <h3><span class="fr">Rien n'est conservé</span><span class="en">Nothing is kept</span></h3>
+          <p><span class="fr">Le fichier est lu dans un dossier temporaire, purgé à la fin de l'analyse et à l'arrêt de l'application.</span><span class="en">The file is read in a temporary folder, purged when the analysis ends and when the application stops.</span></p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/></svg></div>
+          <h3><span class="fr">Code ouvert et auditable</span><span class="en">Open, auditable code</span></h3>
+          <p><span class="fr">Vos équipes de sécurité peuvent tout relire. Licence européenne EUPL 1.2.</span><span class="en">Your security teams can review everything. European licence EUPL 1.2.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="controles">
+    <div class="wrap">
+      <h2><span class="fr">Ce qui est contrôlé</span><span class="en">What is checked</span></h2>
+      <p class="sub">
+        <span class="fr">Règlement d'exécution (UE) 2024/2956, taxonomie EBA 4.0. Package ZIP xBRL-CSV ou enveloppe XML OneGate (ACPR).</span>
+        <span class="en">Implementing Regulation (EU) 2024/2956, EBA taxonomy 4.0. xBRL-CSV ZIP package or OneGate XML envelope (ACPR).</span>
+      </p>
+      <ul class="checks">
+        <li><b class="fr">Forme du dépôt</b><b class="en">Submission format</b><span class="fr">Enveloppe OneGate, structure du package, nommage, encodage, fichiers attendus ou en trop.</span><span class="en">OneGate envelope, package structure, naming, encoding, missing or extra files.</span></li>
+        <li><b class="fr">Format des données</b><b class="en">Data format</b><span class="fr">En-têtes, types, dates, listes fermées, longueurs, identifiants (LEI, EUID, codes nationaux).</span><span class="en">Headers, types, dates, closed lists, lengths, identifiers (LEI, EUID, national codes).</span></li>
+        <li><b class="fr">Règles de validation de l'EBA</b><b class="en">EBA validation rules</b><span class="fr">Règles actives de la taxonomie 4.0 et intégrité entre tableaux.</span><span class="en">Active taxonomy 4.0 rules and cross-table integrity.</span></li>
+        <li><b class="fr">Contrôles d'expert</b><b class="en">Expert checks</b><span class="fr">Chaîne de sous-traitance, montants, mère ultime, concentration, cohérence entre tableaux.</span><span class="en">Subcontracting chain, amounts, ultimate parent, concentration, cross-table consistency.</span></li>
+        <li><b class="fr">LEI auprès du GLEIF</b><b class="en">LEI against GLEIF</b><span class="fr">Existence, statut, pays et mère ultime, sur une copie locale (version en ligne).</span><span class="en">Existence, status, country and ultimate parent, on a local copy (online edition).</span></li>
+        <li><b class="fr">Un rapport exploitable</b><b class="en">An actionable report</b><span class="fr">Trois scores, une synthèse en clair, la référence de chaque constat, export CSV et JSON Lines.</span><span class="en">Three scores, a plain-language summary, a reference for each finding, CSV and JSON Lines export.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section style="padding-top:8px">
+    <div class="wrap">
+      <h2><span class="fr">Deux versions</span><span class="en">Two editions</span></h2>
+      <p class="sub"><span class="fr">Choisissez la version hors ligne si votre DSI interdit toute connexion sortante.</span><span class="en">Choose the offline edition if your IT department forbids any outbound connection.</span></p>
+      <table class="versions">
+        <thead><tr><th>Version</th><th class="fr">Contrôles</th><th class="en">Checks</th><th class="fr">Connexion</th><th class="en">Connection</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="fr">Hors ligne</td><td class="en">Offline</td>
+            <td><span class="fr">Tous, sauf ceux qui interrogent le GLEIF (l'écran l'indique)</span><span class="en">All, except those that query GLEIF (shown on screen)</span></td>
+            <td><span class="fr">Aucune, jamais</span><span class="en">None, ever</span></td>
+          </tr>
+          <tr>
+            <td class="fr">En ligne</td><td class="en">Online</td>
+            <td><span class="fr">Tous, y compris les LEI vérifiés sur une copie locale du GLEIF</span><span class="en">All, including LEIs checked against a local GLEIF copy</span></td>
+            <td><span class="fr">Au démarrage seulement, pour mettre à jour la copie publique du GLEIF. Aucun registre n'est accepté pendant ce temps.</span><span class="en">At start-up only, to update the public GLEIF copy. No register is accepted meanwhile.</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="essayer" style="padding-top:8px">
+    <div class="wrap">
+      <h2><span class="fr">Essayer en 2 minutes</span><span class="en">Try it in 2 minutes</span></h2>
+      <p class="sub"><span class="fr">Pas besoin de votre vrai registre pour découvrir l'outil : un package fictif avec des erreurs volontaires est fourni.</span><span class="en">No need for your real register to discover the tool: a fictitious package with deliberate errors is provided.</span></p>
+      <ol class="steps">
+        <li><b class="fr">Télécharger</b><b class="en">Download</b><span class="fr">Le ZIP de votre système dans la <a href="https://github.com/DORA-QA/dora-register-quality-analyst/releases/latest">dernière release</a>.</span><span class="en">The ZIP for your system from the <a href="https://github.com/DORA-QA/dora-register-quality-analyst/releases/latest">latest release</a>.</span></li>
+        <li><b class="fr">Décompresser et lancer</b><b class="en">Unzip and launch</b><span class="fr">Le navigateur s'ouvre sur l'interface. <a href="https://github.com/DORA-QA/dora-register-quality-analyst/wiki">Aide Windows et macOS</a>.</span><span class="en">Your browser opens the interface. <a href="https://github.com/DORA-QA/dora-register-quality-analyst/wiki">Windows and macOS help</a>.</span></li>
+        <li><b class="fr">Déposer le fichier d'exemple</b><b class="en">Drop the sample file</b><span><a href="https://github.com/DORA-QA/dora-register-quality-analyst/raw/main/sample-data/package-with-defects.sample.zip"><code>package-with-defects.sample.zip</code></a></span></li>
+        <li><b class="fr">Lire le rapport</b><b class="en">Read the report</b><span class="fr">Constats classés par gravité, avec la référence et le conseil de correction.</span><span class="en">Findings ranked by severity, with reference and fixing advice.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section style="padding-top:8px">
+    <div class="wrap">
+      <div class="disclaimer">
+        <p class="fr" style="margin:0"><b>Avertissement.</b> DORA QA est fourni « en l'état », sans garantie. Ses constats sont indicatifs et ne constituent ni un avis juridique ou réglementaire, ni une attestation de conformité. Un registre sans constat peut encore être rejeté. L'entité déclarante reste seule responsable de son registre. DORA QA est un projet indépendant, sans lien avec l'EBA, l'ACPR, l'AMF ou le GLEIF.</p>
+        <p class="en" style="margin:0"><b>Disclaimer.</b> DORA QA is provided “as is”, without warranty. Its findings are indicative and are neither legal or regulatory advice nor a certificate of compliance. A register with no findings may still be rejected. The reporting entity remains solely responsible for its register. DORA QA is an independent project, not affiliated with the EBA, ACPR, AMF or GLEIF.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <div><b style="color:var(--ink)">DORA Register Quality Analyst</b><br>
+        <span class="fr">Logiciel libre sous licence</span><span class="en">Free software under the</span> <a href="https://github.com/DORA-QA/dora-register-quality-analyst/blob/main/LICENSE">EUPL 1.2</a>
+      </div>
+      <div>
+        <a href="https://github.com/DORA-QA/dora-register-quality-analyst">GitHub</a> ·
+        <a href="https://github.com/DORA-QA/dora-register-quality-analyst/wiki"><span class="fr">Guide d'utilisation</span><span class="en">User guide</span></a> ·
+        <a href=""https://github.com/DORA-QA/dora-register-quality-analyst/issues/new/choose"><span class="fr">Signaler un problème</span><span class="en">Report an issue</span></a> ·
+        <a href="mailto:dora-qa@proton.me">dora-qa@proton.me</a>
+      </div>
+    </div>
+    <p class="fine">
+      <span class="fr">Cette page ne charge aucune ressource externe, n'utilise aucun cookie et ne mesure pas votre visite. N'envoyez jamais de registre réel, par aucun canal.</span>
+      <span class="en">This page loads no external resource, sets no cookie and does not track your visit. Never send a real register, through any channel.</span>
+    </p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var body=document.body, btns=document.querySelectorAll('.lang button');
+    function set(l){
+      body.setAttribute('data-lang',l);
+      document.documentElement.lang=l;
+      btns.forEach(function(b){b.setAttribute('aria-pressed', String(b.dataset.set===l));});
+      document.title = l==='en' ? 'DORA QA — Local quality analysis of your DORA register of information'
+                                : "DORA QA — Analyse locale du registre d'information DORA";
+    }
+    btns.forEach(function(b){b.addEventListener('click',function(){set(b.dataset.set); try{history.replaceState(null,'','#'+b.dataset.set);}catch(e){}});});
+    var h=(location.hash||'').slice(1);
+    if(h==='en'||h==='fr'){set(h);} else if((navigator.language||'').slice(0,2)!=='fr'){set('en');}
+  })();
+</script>
+</body>
+</html>
